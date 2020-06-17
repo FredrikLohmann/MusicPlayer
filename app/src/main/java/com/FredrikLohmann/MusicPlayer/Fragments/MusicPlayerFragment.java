@@ -2,6 +2,7 @@ package com.FredrikLohmann.MusicPlayer.Fragments;
 
 import android.content.ContentUris;
 import android.content.Context;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -24,8 +25,9 @@ import android.widget.Toast;
 import com.FredrikLohmann.MusicPlayer.HelperClasses.Song;
 import com.FredrikLohmann.MusicPlayer.MainActivity;
 import com.FredrikLohmann.MusicPlayer.R;
+import com.crystal.crystalrangeseekbar.interfaces.OnRangeSeekbarChangeListener;
+import com.crystal.crystalrangeseekbar.widgets.CrystalRangeSeekbar;
 
-import org.florescu.android.rangeseekbar.RangeSeekBar;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -44,6 +46,7 @@ public class MusicPlayerFragment extends Fragment {
     private Song song;
 
     private Handler handler;
+    private Handler loopHandler;
 
     private ImageButton backButton;
     private ImageView imageView;
@@ -54,13 +57,11 @@ public class MusicPlayerFragment extends Fragment {
     private TextView currentDuration;
 
     private SeekBar seekBar;
-    private RangeSeekBar rangeSeekBar;
+    private CrystalRangeSeekbar rangeSeekBar;
     private Button playBtn;
     private Button speedBtn1;
     private Button speedBtn2;
     private Button speedBtn3;
-
-    boolean loopingPart = false;
 
     private OnFragmentClosedListener mListener;
 
@@ -151,11 +152,16 @@ public class MusicPlayerFragment extends Fragment {
         seekBar = view.findViewById(R.id.seekBar);
         seekBar.setMax(MainActivity.musicService.getDuration());
         seekBar.setPadding(16,8,16,8);
-        rangeSeekBar = view.findViewById(R.id.seekBar2);
-        rangeSeekBar.setRangeValues(0, MainActivity.musicService.getDuration());
-        rangeSeekBar.setSelectedMaxValue(50);
-        rangeSeekBar.setSelectedMinValue(20);
-
+        rangeSeekBar = view.findViewById(R.id.rangeSeekBar);
+        rangeSeekBar.setLeftThumbColor(Color.argb(50,255,255,255));
+        rangeSeekBar.setRightThumbColor(Color.argb(50,255,255,255));
+        rangeSeekBar.setMaxValue(MainActivity.musicService.getDuration());
+        rangeSeekBar.setEnabled(false);
+        if(MainActivity.musicService.isLoopingPart()){
+            rangeSeekBar.setMinValue(MainActivity.musicService.getMin());
+            rangeSeekBar.setMaxValue(MainActivity.musicService.getMax());
+            rangeSeekBar.setEnabled(true);
+        }
         playBtn = view.findViewById(R.id.playBtn);
         speedBtn1 = view.findViewById(R.id.fiftyPercentBtn);
         speedBtn2 = view.findViewById(R.id.seventyfivePercentBtn);
@@ -178,14 +184,6 @@ public class MusicPlayerFragment extends Fragment {
 
                 String str = getFormattedDuration(progress);
                 currentDuration.setText(str);
-
-                // Används för att kunna spela samma stycke gång efter gång
-                if (loopingPart) {
-                    /*
-                    if (progress > mp.getDuration() / 10){
-                        mp.seekTo(0);
-                    }*/
-                }
             }
 
             @Override
@@ -199,13 +197,11 @@ public class MusicPlayerFragment extends Fragment {
             }
         });
 
-        rangeSeekBar.setOnRangeSeekBarChangeListener(new RangeSeekBar.OnRangeSeekBarChangeListener() {
+        rangeSeekBar.setOnRangeSeekbarChangeListener(new OnRangeSeekbarChangeListener() {
             @Override
-            public void onRangeSeekBarValuesChanged(RangeSeekBar bar, Object minValue, Object maxValue) {
-                int min = (int)bar.getSelectedMinValue();
-                int max = (int)bar.getSelectedMaxValue();
-
-
+            public void valueChanged(Number minValue, Number maxValue) {
+                MainActivity.musicService.setMin((long) minValue);
+                MainActivity.musicService.setMax((long) maxValue);
             }
         });
 
@@ -233,7 +229,17 @@ public class MusicPlayerFragment extends Fragment {
         speedBtn1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                MainActivity.musicService.setPlaybackRate(0.50f);
+                if(!MainActivity.musicService.isLoopingPart()){
+                    MainActivity.musicService.loopPart(true);
+                    startLoopingPartTracking();
+                    rangeSeekBar.setEnabled(true);
+
+                }
+                else{
+                    MainActivity.musicService.loopPart(false);
+                    rangeSeekBar.setEnabled(false);
+
+                }
             }
         });
 
@@ -269,6 +275,28 @@ public class MusicPlayerFragment extends Fragment {
                     handler.postDelayed(this, 1000);
             }
         });
+    }
+
+    private void startLoopingPartTracking(){
+        loopHandler = new Handler();
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Används för att kunna spela samma stycke gång efter gång
+                if (MainActivity.musicService.isLoopingPart()) {
+                    if (MainActivity.musicService.getCurrentPosition() > MainActivity.musicService.getMax()){
+                        MainActivity.musicService.seekTo((int)MainActivity.musicService.getMin());
+                    }
+                    // Uppdaterar 10 gånger i sekunden
+                    if(loopHandler != null)
+                        loopHandler.postDelayed(this, 100);
+                }
+                else{
+                    loopHandler = null;
+                }
+            }
+        });
+
     }
 
     private String getFormattedDuration(long duration){

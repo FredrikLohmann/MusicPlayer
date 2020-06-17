@@ -27,6 +27,9 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
     private int songPosition;
     private boolean hasPlayedSong;
     private boolean repeatSong;
+    private boolean loopingPart;
+    private long min;
+    private long max;
 
     @Override
     public void onCreate() {
@@ -36,6 +39,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
         initMusicPlayer();
         hasPlayedSong = false;
         repeatSong = false;
+        loopingPart = false;
     }
 
     private void initMusicPlayer(){
@@ -147,6 +151,30 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
         return repeatSong;
     }
 
+    public void loopPart(boolean b){
+        loopingPart = b;
+    }
+
+    public boolean isLoopingPart(){
+        return loopingPart;
+    }
+
+    public long getMin() {
+        return min;
+    }
+
+    public void setMin(long min){
+        this.min = min;
+    }
+
+    public long getMax() {
+        return max;
+    }
+
+    public void setMax(long max){
+        this.max = max;
+    }
+
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
         if (repeatSong){
@@ -165,6 +193,7 @@ public class MusicService extends Service implements MediaPlayer.OnPreparedListe
         // Uppdatera mini spelaren
         mainFragment.updateCurrentSong();
     }
+
 
     public class MusicBinder extends Binder {
         public MusicService getService() {

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:rsb="http://schemas.android.com/apk/res-auto"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:padding="16dp"
     android:background="@drawable/player_background"
@@ -75,14 +75,12 @@
                         android:id="@+id/seekBar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content" />
-                    <org.florescu.android.rangeseekbar.RangeSeekBar
-                        android:id="@+id/seekBar2"
+                    <com.crystal.crystalrangeseekbar.widgets.CrystalRangeSeekbar
+                        android:id="@+id/rangeSeekBar"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        rsb:showLabels="true"
-                        android:layout_margin="0dp"
-                        android:padding="0dp"
-                        rsb:activeColor="@color/colorAccent"
+                        app:bar_color="@android:color/transparent"
+                        app:bar_highlight_color="@android:color/transparent"
                         />
                 </FrameLayout>
 
